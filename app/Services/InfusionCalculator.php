@@ -36,11 +36,11 @@ class InfusionCalculator
             return 'habis';
         }
 
-        if ($reported === 'macet' && $this->canDetectStagnation($percentage)) {
+        if ($reported === 'macet') {
             return 'macet';
         }
 
-        if ($this->canDetectStagnation($percentage) && $this->isWeightStagnant($monitoring, $weight, $loggedAt)) {
+        if ($this->isWeightStagnant($monitoring, $weight, $loggedAt)) {
             return 'macet';
         }
 
@@ -80,13 +80,6 @@ class InfusionCalculator
             ->where('logged_at', '<=', $cutoff)
             ->whereBetween('weight', [$weight - $tolerance, $weight + $tolerance])
             ->exists();
-    }
-
-    private function canDetectStagnation(float $percentage): bool
-    {
-        $startBelow = max(0, min(100, (float) config('infusion.stagnation_start_below_percentage', 98)));
-
-        return $percentage < $startBelow;
     }
 
     public function monitoringStatus(string $deviceStatus): string
