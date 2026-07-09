@@ -1,0 +1,60 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: "Monitoring Infus Yowari"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      APP_TIMEZONE: Asia/Jayapura
+      APP_LOCALE: en
+      APP_FALLBACK_LOCALE: en
+      APP_FAKER_LOCALE: en_US
+      INFUSION_STAGNATION_MINUTES: 1
+      INFUSION_STAGNATION_TOLERANCE_GRAMS: 0.2
+      INFUSION_STAGNATION_START_BELOW_PERCENTAGE: 98
+      INFUSION_OFFLINE_SECONDS: 30
+      INFUSION_LOW_PERCENTAGE: 10
+      INFUSION_EMPTY_PERCENTAGE: 5
+      INFUSION_ESTIMATION_WINDOW_MINUTES: 3
+      INFUSION_ESTIMATION_MIN_SAMPLES: 4
+      INFUSION_ESTIMATION_MIN_DROP_ML: 2
+      INFUSION_ESTIMATION_MIN_RATE_ML_PER_MINUTE: 0.2
+      INFUSION_ESTIMATION_MAX_MINUTES: 1440
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: monitoring_infus_rumah_sakit_yowari
+      DB_USERNAME: monitoring
+      DB_PASSWORD: monitoring
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      LOG_CHANNEL: stderr
+      VITE_APP_NAME: "Monitoring Infus Yowari"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: monitoring_infus_rumah_sakit_yowari
+      MYSQL_USER: monitoring
+      MYSQL_PASSWORD: monitoring
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-umonitoring", "-pmonitoring"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mysql_data:

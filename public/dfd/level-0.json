@@ -1,0 +1,235 @@
+{
+    "system": "Laravel System",
+    "level": 0,
+    "meta": {
+        "generatedAt": "2026-06-10T20:40:17+00:00",
+        "routes": 7,
+        "processes": 26,
+        "dataStores": 1,
+        "externalEntities": 1,
+        "warnings": [
+            "Tidak ada proses kompleks untuk Level 3. Diagram Level 3 dibuat sebagai empty state."
+        ],
+        "creator": "Andre Tumbelaka"
+    },
+    "groups": [
+        {
+            "key": "transaction",
+            "label": "Riwayat Transaksi",
+            "number": "1.0",
+            "processId": "process.group.transaction",
+            "processes": [
+                {
+                    "id": "process.App.Http.Controllers.MonitoringHistoryController",
+                    "name": "App\\Http\\Controllers\\MonitoringHistoryController",
+                    "inputs": [
+                        "GET|HEAD monitoring/history"
+                    ],
+                    "outputs": [
+                        "Patient::with->latest.get",
+                        "Patient::with.latest",
+                        "Patient.with",
+                        "view",
+                        "display.recentHistory"
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "infusion-reading",
+            "label": "Manajemen Infusion Reading",
+            "number": "2.0",
+            "processId": "process.group.infusion-reading",
+            "processes": [
+                {
+                    "id": "process.App.Http.Controllers.Api.InfusionReadingController.store",
+                    "name": "App\\Http\\Controllers\\Api\\InfusionReadingController@store",
+                    "inputs": [
+                        "POST api/infusion-readings"
+                    ],
+                    "outputs": [
+                        "request->json.all",
+                        "request.json",
+                        "request.all",
+                        "response.json",
+                        "response",
+                        "InfusionMonitoring::query->whereIn->where->latest.first",
+                        "InfusionMonitoring::query->whereIn->where.latest",
+                        "InfusionMonitoring::query->whereIn.where",
+                        "InfusionMonitoring::query.whereIn",
+                        "InfusionMonitoring.query",
+                        "query->where->orWhere.orWhere",
+                        "query->where.orWhere",
+                        "query.where",
+                        "calculator.normalizeDeviceStatus",
+                        "Carbon.now",
+                        "config",
+                        "monitoring->readings.create",
+                        "monitoring.readings",
+                        "calculator.percentage",
+                        "monitoring.update",
+                        "calculator.monitoringStatus",
+                        "loggedAt.format"
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "dashboard-controller-g-e-t-h-e-a-d-dashboard-patient-with-latest-paginate-patient-with-latest-patient-with-patients-get-collection-view-display-stats-patient-with-latest-get-display-dashboard-rows-patients-total",
+            "label": "Manajemen Dashboard Controller  G E T| H E A D dashboard  Patient::with->latest.paginate  Patient::with.latest  Patient.with patients.get Collection view display.stats  Patient::with->latest.get display.dashboard Rows patients.total",
+            "number": "3.0",
+            "processId": "process.group.dashboard-controller-g-e-t-h-e-a-d-dashboard-patient-with-latest-paginate-patient-with-latest-patient-with-patients-get-collection-view-display-stats-patient-with-latest-get-display-dashboard-rows-patients-total",
+            "processes": [
+                {
+                    "id": "process.App.Http.Controllers.DashboardController",
+                    "name": "App\\Http\\Controllers\\DashboardController",
+                    "inputs": [
+                        "GET|HEAD dashboard"
+                    ],
+                    "outputs": [
+                        "Patient::with->latest.paginate",
+                        "Patient::with.latest",
+                        "Patient.with",
+                        "patients.getCollection",
+                        "view",
+                        "display.stats",
+                        "Patient::with->latest.get",
+                        "display.dashboardRows",
+                        "patients.total"
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "patient",
+            "label": "Manajemen Patient",
+            "number": "4.0",
+            "processId": "process.group.patient",
+            "processes": [
+                {
+                    "id": "process.App.Http.Controllers.PatientController.create",
+                    "name": "App\\Http\\Controllers\\PatientController@create",
+                    "inputs": [
+                        "GET|HEAD patients/create"
+                    ],
+                    "outputs": [
+                        "view",
+                        "patient.load",
+                        "display.patientDetail",
+                        "request.validate",
+                        "Patient.create",
+                        "redirect->route.with",
+                        "redirect.route",
+                        "redirect"
+                    ]
+                },
+                {
+                    "id": "process.App.Http.Controllers.PatientController.store",
+                    "name": "App\\Http\\Controllers\\PatientController@store",
+                    "inputs": [
+                        "POST patients"
+                    ],
+                    "outputs": [
+                        "view",
+                        "patient.load",
+                        "display.patientDetail",
+                        "request.validate",
+                        "Patient.create",
+                        "redirect->route.with",
+                        "redirect.route",
+                        "redirect"
+                    ]
+                },
+                {
+                    "id": "process.App.Http.Controllers.PatientController.show",
+                    "name": "App\\Http\\Controllers\\PatientController@show",
+                    "inputs": [
+                        "GET|HEAD patients/{patient}"
+                    ],
+                    "outputs": [
+                        "view",
+                        "patient.load",
+                        "display.patientDetail",
+                        "request.validate",
+                        "Patient.create",
+                        "redirect->route.with",
+                        "redirect.route",
+                        "redirect"
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "monitoring-controller-g-e-t-h-e-a-d-monitoring-patient-with-latest-get-patient-with-latest-patient-with-view-display-monitoring-cards-display-stats",
+            "label": "Manajemen Monitoring Controller  G E T| H E A D monitoring  Patient::with->latest.get  Patient::with.latest  Patient.with view display.monitoring Cards display.stats",
+            "number": "5.0",
+            "processId": "process.group.monitoring-controller-g-e-t-h-e-a-d-monitoring-patient-with-latest-get-patient-with-latest-patient-with-view-display-monitoring-cards-display-stats",
+            "processes": [
+                {
+                    "id": "process.App.Http.Controllers.MonitoringController",
+                    "name": "App\\Http\\Controllers\\MonitoringController",
+                    "inputs": [
+                        "GET|HEAD monitoring"
+                    ],
+                    "outputs": [
+                        "Patient::with->latest.get",
+                        "Patient::with.latest",
+                        "Patient.with",
+                        "view",
+                        "display.monitoringCards",
+                        "display.stats"
+                    ]
+                }
+            ]
+        }
+    ],
+    "diagrams": [
+        {
+            "id": "level-0",
+            "level": 0,
+            "title": "Level 0 Context Diagram",
+            "parentProcessId": null,
+            "childLevelIds": [
+                "level-1"
+            ],
+            "processes": [
+                {
+                    "id": "process.system",
+                    "number": "0",
+                    "name": "Laravel System",
+                    "label": "0 Laravel System",
+                    "level": 0,
+                    "parentId": null,
+                    "sourceProcessIds": [],
+                    "inputs": [],
+                    "outputs": []
+                }
+            ],
+            "dataStores": [
+                {
+                    "id": "store.patient",
+                    "name": "D1 Patients",
+                    "type": "model"
+                }
+            ],
+            "externalEntities": [
+                {
+                    "id": "external.client",
+                    "name": "User"
+                }
+            ],
+            "flows": [
+                {
+                    "from": "external.client",
+                    "to": "process.system",
+                    "label": "Permintaan Layanan"
+                },
+                {
+                    "from": "process.system",
+                    "to": "store.patient",
+                    "label": "D1 Patients"
+                }
+            ]
+        }
+    ]
+}
