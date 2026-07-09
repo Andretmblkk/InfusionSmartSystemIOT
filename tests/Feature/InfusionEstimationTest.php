@@ -62,7 +62,7 @@ class InfusionEstimationTest extends TestCase
 
         $estimate = app(InfusionCalculator::class)->timeRemainingFromWeightTrend($monitoring, $latest);
 
-        $this->assertSame('Menghitung', $estimate);
+        $this->assertSame('Menunggu aliran', $estimate);
     }
 
     private function createMonitoring(): InfusionMonitoring

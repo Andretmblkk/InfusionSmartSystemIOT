@@ -124,6 +124,10 @@ class InfusionCalculator
             return '00:00:00';
         }
 
+        if ($reading->remaining_percentage >= (float) config('infusion.stagnation_start_below_percentage', 98)) {
+            return 'Menunggu aliran';
+        }
+
         $windowMinutes = max(1, (int) config('infusion.estimation_window_minutes', 3));
         $minimumSamples = max(2, (int) config('infusion.estimation_min_samples', 4));
         $minimumDrop = max(0.1, (float) config('infusion.estimation_min_drop_ml', 2));
@@ -138,7 +142,7 @@ class InfusionCalculator
             ->get(['logged_at', 'weight']);
 
         if ($readings->count() < $minimumSamples) {
-            return 'Menghitung';
+            return 'Menunggu data';
         }
 
         $first = $readings->first();
@@ -146,25 +150,25 @@ class InfusionCalculator
         $elapsedMinutes = $first->logged_at->diffInSeconds($last->logged_at) / 60;
 
         if ($elapsedMinutes < 1) {
-            return 'Menghitung';
+            return 'Menunggu data';
         }
 
         $netDrop = $first->weight - $last->weight;
 
         if ($netDrop < $minimumDrop) {
-            return 'Menghitung';
+            return 'Menunggu aliran';
         }
 
         $slope = $this->weightSlopePerMinute($readings);
 
         if ($slope >= 0) {
-            return 'Menghitung';
+            return 'Menunggu aliran';
         }
 
         $mlPerMinute = abs($slope);
 
         if ($mlPerMinute < $minimumRate) {
-            return 'Menghitung';
+            return 'Menunggu aliran';
         }
 
         $totalMinutes = (int) ceil($reading->weight / $mlPerMinute);
