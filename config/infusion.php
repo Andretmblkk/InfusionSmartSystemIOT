@@ -12,7 +12,7 @@ return [
     */
 
     'stagnation_minutes' => (int) env('INFUSION_STAGNATION_MINUTES', 1),
-    'stagnation_tolerance_grams' => (float) env('INFUSION_STAGNATION_TOLERANCE_GRAMS', 0.2),
+    'stagnation_tolerance_grams' => (float) env('INFUSION_STAGNATION_TOLERANCE_GRAMS', 10),
     'stagnation_start_below_percentage' => (float) env('INFUSION_STAGNATION_START_BELOW_PERCENTAGE', 98),
     'offline_seconds' => (int) env('INFUSION_OFFLINE_SECONDS', 30),
     'low_percentage' => (float) env('INFUSION_LOW_PERCENTAGE', 10),
