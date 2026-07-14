@@ -33,6 +33,7 @@ services:
       SESSION_DRIVER: database
       CACHE_STORE: database
       QUEUE_CONNECTION: database
+      RUN_DB_SEED: "true"
       LOG_CHANNEL: stderr
       VITE_APP_NAME: "Monitoring Infus Yowari"
     depends_on:
@@ -55,6 +56,20 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: monitoring
+      PMA_PASSWORD: monitoring
+      UPLOAD_LIMIT: 128M
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
   mysql_data:

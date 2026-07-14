@@ -11,9 +11,14 @@
     $items = [
         ['key' => 'dashboard', 'label' => 'Beranda', 'icon' => 'grid', 'href' => route('dashboard')],
         ['key' => 'monitoring', 'label' => 'Monitoring Infus', 'icon' => 'iv', 'href' => route('monitoring')],
-        ['key' => 'patient-input', 'label' => 'Input Data Pasien', 'icon' => 'user-plus', 'href' => route('patients.create')],
-        ['key' => 'history', 'label' => 'Riwayat Monitoring', 'icon' => 'history', 'href' => route('monitoring.history')],
+        ['key' => 'master-data', 'label' => 'Input Data Pasien', 'icon' => 'id-card', 'href' => route('master-data.index')],
+        ['key' => 'patient-input', 'label' => 'Input Monitoring', 'icon' => 'user-plus', 'href' => route('patients.create')],
+        ['key' => 'history', 'label' => 'Laporan', 'icon' => 'history', 'href' => route('monitoring.history')],
     ];
+
+    if (auth()->check() && auth()->user()->can('use-operator-panel')) {
+        $items[] = ['key' => 'operator', 'label' => 'Panel Operator', 'icon' => 'settings', 'href' => route('operator-panel.index')];
+    }
 @endphp
 
 <aside class="hidden {{ $variant === 'patient-input' ? 'w-[276px]' : 'w-[288px]' }} {{ $sticky ? 'lg:sticky lg:top-0 lg:self-start' : '' }} min-h-screen shrink-0 bg-white px-6 py-[27px] shadow-[inset_-1px_0_0_#e2e7ec] lg:flex lg:flex-col">

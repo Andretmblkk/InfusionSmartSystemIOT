@@ -14,7 +14,7 @@ class InfusionDeviceSeeder extends Seeder
 
         foreach ([1, 2, 3] as $node) {
             $patient = $patients->get($node - 1);
-            $bed = config("infusion.beds.{$node}", ['label' => 'Kasur ' . $node, 'node_id' => $node]);
+            $bed = config("infusion.beds.{$node}", ['label' => 'Bed ' . $node, 'node_id' => $node]);
 
             InfusionMonitoring::updateOrCreate(
                 [

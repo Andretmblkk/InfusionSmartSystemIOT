@@ -48,6 +48,7 @@
                     :time-remaining="$patient['timeRemaining']"
                     :progress="$patient['progress']"
                     :progress-tone="$patient['progressTone']"
+                    :href="$patient['href'] ?? null"
                 />
             @empty
                 <div class="rounded-[7px] bg-white px-6 py-10 text-center text-[14px] font-semibold text-[#6b7480] shadow-[0_10px_28px_rgba(39,82,120,0.04)] md:col-span-2 xl:col-span-3">

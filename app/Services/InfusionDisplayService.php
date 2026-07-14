@@ -69,8 +69,12 @@ class InfusionDisplayService
             'emptyWeight' => 50,
             'fullWeight' => $patient->initial_volume + 50,
             'location' => $this->locationLabel($patient, $snapshot['monitoring']),
-            'bedLabel' => $snapshot['monitoring']?->unit_infus ?? $this->bedLabel($patient->bed_number),
+            'bedLabel' => $this->monitoringBedLabel($snapshot['monitoring']) ?? $this->bedLabel($patient->bed_number),
             'nodeId' => $snapshot['monitoring']?->node_id,
+            'monitoring' => $snapshot['monitoring'],
+            'infusionName' => $snapshot['monitoring'] ? $this->infusionName($snapshot['monitoring']) : '-',
+            'responsibleNurse' => $snapshot['monitoring']?->responsible_nurse ?? $patient->nurse_name,
+            'infusionSessions' => $this->infusionSessions($patient),
         ];
     }
 
@@ -80,7 +84,7 @@ class InfusionDisplayService
             ->map(function (Patient $patient, int $index): ?array {
                 $snapshot = $this->snapshot($patient, $index);
 
-                if (! $snapshot['hasReading'] || $snapshot['cardStatus'] === 'normal') {
+                if (! $snapshot['hasReading'] || $snapshot['cardStatus'] === 'normal' || $snapshot['statusLabel'] === 'Menunggu') {
                     return null;
                 }
 
@@ -114,27 +118,95 @@ class InfusionDisplayService
 
     public function recentHistory(Collection $patients): array
     {
-        $readings = InfusionReading::with('monitoring.patient')
-            ->latest('logged_at')
-            ->take(8)
-            ->get();
+        $patients->loadMissing('infusionMonitorings.latestReading');
 
-        if ($readings->isNotEmpty()) {
-            return $readings->map(function (InfusionReading $reading): array {
-                $patient = $reading->monitoring->patient;
+        return $patients
+            ->filter(fn (Patient $patient): bool => $patient->infusionMonitorings->isNotEmpty())
+            ->sortByDesc(function (Patient $patient) {
+                return optional($patient->infusionMonitorings->max('started_at'))?->timestamp ?? 0;
+            })
+            ->values()
+            ->map(fn (Patient $patient, int $index): array => $this->buildReportRow($patient, $index))
+            ->take(12)
+            ->all();
+    }
+
+    public function dashboardActivityPanel(Collection $patients): array
+    {
+        $patients->loadMissing('latestInfusionMonitoring.latestReading');
+
+        $snapshots = $patients
+            ->values()
+            ->map(function (Patient $patient, int $index): array {
+                $snapshot = $this->snapshot($patient, $index);
+                $monitoring = $snapshot['monitoring'];
+                $reading = $monitoring?->latestReading;
 
                 return [
-                    'time' => optional($reading->logged_at)->format('d M Y, H:i') ?? '-',
-                    'patient' => $patient?->patient_name ?? 'Node ' . $reading->node_id,
-                    'room' => $patient ? $this->locationLabel($patient, $reading->monitoring) : $reading->unit_infus,
-                    'weight' => $this->formatNumber($reading->weight) . ' gram',
-                    'percentage' => $this->formatNumber($reading->remaining_percentage) . '%',
-                    'status' => $this->readingStatusLabel($reading->device_status, $reading->remaining_percentage),
-                    'tone' => $this->readingStatusTone($reading->device_status, $reading->remaining_percentage),
+                    'patient' => $patient,
+                    'snapshot' => $snapshot,
+                    'loggedAt' => $reading?->logged_at,
+                    'bedLabel' => $this->monitoringBedLabel($monitoring) ?? $this->bedLabel($patient->bed_number) ?? 'Bed',
                 ];
-            })->all();
-        }
+            })
+            ->sortByDesc(fn (array $item) => optional($item['loggedAt'])->timestamp ?? 0)
+            ->values();
 
+        $latestSnapshot = $snapshots->first(fn (array $item): bool => $item['loggedAt'] !== null);
+        $latestLoggedAt = $latestSnapshot['loggedAt'] ?? null;
+
+        return [
+            'updatedLabel' => $latestLoggedAt
+                ? 'Update ' . $latestLoggedAt->locale('id')->diffForHumans(now(), [
+                    'parts' => 2,
+                    'short' => false,
+                    'syntax' => \Carbon\CarbonInterface::DIFF_RELATIVE_TO_NOW,
+                ])
+                : 'Belum ada pembacaan terbaru',
+            'items' => $snapshots
+                ->take(2)
+                ->map(fn (array $item): array => $this->buildActivityItem(
+                    $item['bedLabel'],
+                    $item['snapshot']['statusLabel'],
+                    (int) $item['snapshot']['percentage'],
+                ))
+                ->all(),
+        ];
+    }
+
+    public function reportRow(Patient $patient): array
+    {
+        $patient->loadMissing(['registeredPatient', 'infusionMonitorings.latestReading', 'latestInfusionMonitoring.latestReading']);
+
+        return $this->buildReportRow($patient, 0);
+    }
+
+    private function infusionSessions(Patient $patient): array
+    {
+        $patient->loadMissing('infusionMonitorings.latestReading');
+
+        return $patient->infusionMonitorings
+            ->sortByDesc('started_at')
+            ->values()
+            ->map(function (InfusionMonitoring $monitoring, int $index): array {
+                $reading = $monitoring->latestReading;
+
+                return [
+                    'sequence' => $index + 1,
+                    'infusionName' => $this->infusionName($monitoring),
+                    'volume' => $monitoring->capacity_ml . ' ml',
+                    'nurse' => $monitoring->responsible_nurse ?: '-',
+                    'startedAt' => optional($monitoring->started_at)->format('d M Y, H:i') ?? '-',
+                    'endedAt' => optional($monitoring->ended_at)->format('d M Y, H:i') ?? '-',
+                    'status' => ucfirst($monitoring->status),
+                    'latestPercentage' => $reading ? $this->formatNumber($reading->remaining_percentage) . '%' : '-',
+                ];
+            })
+            ->all();
+    }
+
+    private function legacyHistoryFallback(Collection $patients): array
+    {
         return $patients->take(8)->values()->map(function (Patient $patient, int $index): array {
             $snapshot = $this->snapshot($patient, $index);
 
@@ -150,11 +222,82 @@ class InfusionDisplayService
         })->all();
     }
 
+    private function buildReportRow(Patient $patient, int $index): array
+    {
+        $snapshot = $this->snapshot($patient, $index);
+        $sessions = $patient->infusionMonitorings->sortBy('started_at')->values();
+        $latestSession = $sessions->last();
+        $replacementCount = max(0, $sessions->count() - 1);
+        $infusionNames = $sessions
+            ->map(fn (InfusionMonitoring $monitoring): string => $this->infusionName($monitoring))
+            ->filter()
+            ->unique()
+            ->values();
+        $nurses = $sessions
+            ->pluck('responsible_nurse')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return [
+            'patient' => $patient->patient_name,
+            'medicalRecord' => $patient->registeredPatient?->nomor_rekam_medis ?? '-',
+            'room' => $this->locationLabel($patient, $latestSession),
+            'bed' => $this->monitoringBedLabel($latestSession) ?? $this->bedLabel($patient->bed_number) ?? '-',
+            'doctor' => $patient->doctor_name,
+            'infusionCount' => $sessions->count(),
+            'replacementCount' => $replacementCount,
+            'infusionNames' => $infusionNames->isNotEmpty() ? $infusionNames->implode(', ') : '-',
+            'latestInfusion' => $latestSession ? $this->infusionName($latestSession) : '-',
+            'nurses' => $nurses->isNotEmpty() ? $nurses->implode(', ') : $patient->nurse_name,
+            'firstDate' => optional($sessions->first()?->started_at)->format('d M Y, H:i') ?? '-',
+            'latestDate' => optional($latestSession?->started_at)->format('d M Y, H:i') ?? '-',
+            'status' => $snapshot['statusLabel'],
+            'tone' => $snapshot['statusTone'],
+            'href' => route('monitoring.history.show', $patient),
+        ];
+    }
+
+    private function buildActivityItem(string $bedLabel, string $statusLabel, int $percentage): array
+    {
+        return match ($statusLabel) {
+            'Offline' => [
+                'label' => "{$bedLabel}: Node offline",
+                'tone' => 'yellow',
+            ],
+            'Ganti' => [
+                'label' => "{$bedLabel}: Sisa infus {$percentage}%",
+                'tone' => 'red',
+            ],
+            'Macet' => [
+                'label' => "{$bedLabel}: Aliran macet",
+                'tone' => 'yellow',
+            ],
+            'Peringatan' => [
+                'label' => "{$bedLabel}: Sisa infus {$percentage}%",
+                'tone' => 'blue',
+            ],
+            default => [
+                'label' => "{$bedLabel}: Kondisi stabil",
+                'tone' => 'green',
+            ],
+        };
+    }
+
     private function snapshot(Patient $patient, int $index): array
     {
         $monitoring = $patient->relationLoaded('latestInfusionMonitoring')
             ? $patient->latestInfusionMonitoring
             : $patient->latestInfusionMonitoring()->with('latestReading')->first();
+
+        if ($monitoring) {
+            $overrideSnapshot = app(OperatorOverrideService::class)->snapshotForMonitoring($monitoring, $patient);
+
+            if ($overrideSnapshot) {
+                return $overrideSnapshot;
+            }
+        }
+
         $reading = $monitoring?->latestReading;
 
         if ($reading) {
@@ -180,17 +323,20 @@ class InfusionDisplayService
             ];
         }
 
+        $isOffline = $this->isMonitoringOfflineWithoutReading($monitoring);
+        $capacity = max(0, (int) ($monitoring?->capacity_ml ?: $patient->initial_volume ?: 0));
+
         return [
-            'percentage' => 0,
-            'currentWeight' => 0,
-            'timeRemaining' => 'Menghitung',
+            'percentage' => $capacity > 0 ? 100 : 0,
+            'currentWeight' => $capacity > 0 ? $capacity : 0,
+            'timeRemaining' => $isOffline ? '-' : 'Menghitung',
             'cardStatus' => 'warning',
-            'statusLabel' => 'Menunggu',
-            'statusTone' => 'red',
-            'weightTone' => 'red',
+            'statusLabel' => $isOffline ? 'Offline' : 'Menunggu',
+            'statusTone' => $isOffline ? 'red' : 'green',
+            'weightTone' => $capacity > 0 ? 'green' : 'red',
             'progressTone' => 'yellow',
-            'isOffline' => false,
-            'hasReading' => false,
+            'isOffline' => $isOffline,
+            'hasReading' => $isOffline,
             'monitoring' => $monitoring,
         ];
     }
@@ -200,6 +346,22 @@ class InfusionDisplayService
         $seconds = max(5, (int) config('infusion.offline_seconds', 30));
 
         return $reading->logged_at->lt(now()->subSeconds($seconds));
+    }
+
+    private function isMonitoringOfflineWithoutReading(?InfusionMonitoring $monitoring): bool
+    {
+        if (! $monitoring) {
+            return false;
+        }
+
+        $seconds = max(5, (int) config('infusion.offline_seconds', 30));
+        $referenceTime = $monitoring->started_at ?? $monitoring->created_at;
+
+        if (! $referenceTime) {
+            return false;
+        }
+
+        return $referenceTime->lt(now()->subSeconds($seconds));
     }
 
     private function initials(string $name): string
@@ -291,9 +453,14 @@ class InfusionDisplayService
         return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
     }
 
+    private function infusionName(InfusionMonitoring $monitoring): string
+    {
+        return $monitoring->infusion_name ?: 'Infus ' . $monitoring->capacity_ml . ' ml';
+    }
+
     private function locationLabel(Patient $patient, ?InfusionMonitoring $monitoring): string
     {
-        $bedLabel = $monitoring?->unit_infus ?: $this->bedLabel($patient->bed_number);
+        $bedLabel = $this->monitoringBedLabel($monitoring) ?: $this->bedLabel($patient->bed_number);
 
         if (! $bedLabel) {
             return $patient->room_name;
@@ -308,7 +475,22 @@ class InfusionDisplayService
             return null;
         }
 
-        return config("infusion.beds.{$bedNumber}.label", 'Kasur ' . $bedNumber);
+        return config("infusion.beds.{$bedNumber}.label", 'Bed ' . $bedNumber);
+    }
+
+    private function monitoringBedLabel(?InfusionMonitoring $monitoring): ?string
+    {
+        if (! $monitoring) {
+            return null;
+        }
+
+        foreach (config('infusion.beds', []) as $bedNumber => $bed) {
+            if ((int) $bed['node_id'] === (int) $monitoring->node_id) {
+                return $bed['label'] ?? 'Bed ' . $bedNumber;
+            }
+        }
+
+        return $monitoring->unit_infus ?: null;
     }
 
     private function alertMessage(string $statusLabel, Patient $patient, int $percentage): string

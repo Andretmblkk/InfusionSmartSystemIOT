@@ -6,6 +6,17 @@
     <meta http-equiv="refresh" content="5">
 @endpush
 
+@php
+    $activeNav = 'dashboard';
+    $sidebarBrand = 'VitalFlow';
+    $sidebarSubtitle = 'RSUD Yowari';
+    $sidebarSupport = false;
+    $sidebarVariant = 'patient-input';
+    $sidebarSticky = true;
+    $topbarTitle = 'Beranda Monitoring';
+    $topbarMode = 'patient-input';
+@endphp
+
 @section('content')
     <div class="mx-auto flex max-w-[928px] flex-col">
         <x-dashboard.alert-stack :alerts="$alerts ?? []" />
@@ -28,7 +39,7 @@
         </div>
 
         <div class="mt-8">
-            <x-dashboard.info-panels />
+            <x-dashboard.info-panels :activity-panel="$activityPanel ?? []" />
         </div>
 
         <a href="{{ route('patients.create') }}" class="fixed bottom-[32px] right-[38px] hidden size-14 items-center justify-center rounded-[15px] bg-[#005daa] text-white shadow-[0_16px_30px_rgba(0,83,164,0.28)] lg:flex" aria-label="Tambah pasien baru">

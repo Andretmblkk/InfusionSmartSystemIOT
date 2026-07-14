@@ -24,8 +24,24 @@ return [
     'estimation_max_minutes' => (int) env('INFUSION_ESTIMATION_MAX_MINUTES', 24 * 60),
 
     'beds' => [
-        1 => ['label' => 'Kasur 1', 'node_id' => 1],
-        2 => ['label' => 'Kasur 2', 'node_id' => 2],
-        3 => ['label' => 'Kasur 3', 'node_id' => 3],
+        1 => ['label' => 'Bed 1', 'node_id' => 2],
+        2 => ['label' => 'Bed 2', 'node_id' => 3],
+    ],
+
+    'rooms' => [
+        'VIP Dewasa',
+        'Ruang Mawar',
+        'Ruang Anggrek',
+        'Ruang Nifas',
+        'Ruang Isolasi',
+        'Rawat Inap Anak',
+    ],
+
+    'operator_profiles' => [
+        'pending' => ['label' => 'Belum Mengalir', 'rate_ml_per_hour' => 0],
+        'slow' => ['label' => 'Lambat', 'rate_ml_per_hour' => 40],
+        'medium' => ['label' => 'Sedang', 'rate_ml_per_hour' => 100],
+        'fast' => ['label' => 'Cepat', 'rate_ml_per_hour' => 160],
+        'stopped' => ['label' => 'Berhenti', 'rate_ml_per_hour' => 0],
     ],
 ];

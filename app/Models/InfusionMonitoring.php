@@ -17,7 +17,11 @@ class InfusionMonitoring extends Model
         'node_id',
         'bed_number',
         'unit_infus',
+        'infusion_name',
+        'data_infus_id',
         'capacity_ml',
+        'responsible_nurse',
+        'perawat_penanggung_jawab_id',
         'started_at',
         'ended_at',
         'status',
@@ -37,6 +41,16 @@ class InfusionMonitoring extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    public function infusionProduct(): BelongsTo
+    {
+        return $this->belongsTo(InfusionProduct::class, 'data_infus_id');
+    }
+
+    public function responsibleNurse(): BelongsTo
+    {
+        return $this->belongsTo(Nurse::class, 'perawat_penanggung_jawab_id');
     }
 
     public function readings(): HasMany

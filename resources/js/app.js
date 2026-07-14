@@ -119,5 +119,95 @@ function setupLiveCountdowns() {
     }, 1000);
 }
 
+function setupLiveClock() {
+    const nodes = [...document.querySelectorAll('[data-live-clock]')];
+
+    if (nodes.length === 0) {
+        return;
+    }
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    const render = () => {
+        const now = new Date();
+        const label = `${pad(now.getDate())} ${monthNames[now.getMonth()]} ${now.getFullYear()}, ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+        nodes.forEach((node) => {
+            node.textContent = `${label} WIT`;
+        });
+    };
+
+    render();
+    window.setInterval(render, 1000);
+}
+
+function setupTopbarDropdowns() {
+    const dropdowns = [...document.querySelectorAll('[data-topbar-dropdown]')];
+
+    if (dropdowns.length === 0) {
+        return;
+    }
+
+    dropdowns.forEach((dropdown) => {
+        dropdown.addEventListener('toggle', () => {
+            if (!dropdown.open) {
+                return;
+            }
+
+            dropdowns.forEach((otherDropdown) => {
+                if (otherDropdown !== dropdown) {
+                    otherDropdown.open = false;
+                }
+            });
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        dropdowns.forEach((dropdown) => {
+            if (dropdown.open && !dropdown.contains(event.target)) {
+                dropdown.open = false;
+            }
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        dropdowns.forEach((dropdown) => {
+            dropdown.open = false;
+        });
+    });
+}
+
+function setupPasswordToggles() {
+    const toggles = [...document.querySelectorAll('[data-password-toggle]')];
+
+    if (toggles.length === 0) {
+        return;
+    }
+
+    toggles.forEach((toggle) => {
+        const wrapper = toggle.parentElement;
+        const input = wrapper?.querySelector('[data-password-input]');
+
+        if (!input) {
+            return;
+        }
+
+        toggle.addEventListener('click', () => {
+            const isHidden = input.getAttribute('type') === 'password';
+
+            input.setAttribute('type', isHidden ? 'text' : 'password');
+            toggle.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+            toggle.setAttribute('aria-label', isHidden ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', setupInfusionCountdown);
 document.addEventListener('DOMContentLoaded', setupLiveCountdowns);
+document.addEventListener('DOMContentLoaded', setupLiveClock);
+document.addEventListener('DOMContentLoaded', setupTopbarDropdowns);
+document.addEventListener('DOMContentLoaded', setupPasswordToggles);

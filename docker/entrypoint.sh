@@ -18,6 +18,12 @@ fi
 php artisan config:clear --no-interaction
 php artisan route:clear --no-interaction
 php artisan migrate --force --no-interaction
-php artisan db:seed --force --no-interaction
+
+if [ "${RUN_DB_SEED:-false}" = "true" ]; then
+    echo "RUN_DB_SEED=true, running database seeder..."
+    php artisan db:seed --force --no-interaction
+else
+    echo "RUN_DB_SEED=false, skipping database seeder."
+fi
 
 exec "$@"

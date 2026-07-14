@@ -3,7 +3,7 @@
 
     <div class="mt-5 space-y-5">
         @foreach ([
-            'Pastikan kasur yang dipilih sesuai dengan alat monitoring di sisi pasien.',
+            'Pastikan bed yang dipilih sesuai dengan alat monitoring di sisi pasien.',
             'Volume infus awal harus sesuai dengan label pada kantong cairan infus.',
             'Gunakan format waktu 24 jam untuk presisi penghitungan estimasi habis.',
             'Sistem akan memberikan notifikasi kritis jika sisa cairan di bawah 10%.',

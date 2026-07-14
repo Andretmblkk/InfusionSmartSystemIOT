@@ -45,6 +45,53 @@ ID: 2405001
 Password: password
 ```
 
+User operator demo:
+
+```text
+ID: 220803
+Password: operator123
+```
+
+### Pola Seed Yang Aman Untuk Hosting
+
+Project ini sekarang memakai flag `RUN_DB_SEED`.
+
+- `RUN_DB_SEED=true`: jalankan seeder saat container start
+- `RUN_DB_SEED=false`: lewati seeder saat container start
+
+Untuk local demo, `docker-compose.yml` sudah diset:
+
+```text
+RUN_DB_SEED=true
+```
+
+Supaya data dokter, perawat, pasien referensi, infus, dan akun login tetap langsung tersedia.
+
+Untuk hosting, pola yang disarankan:
+
+1. Deploy pertama:
+
+```text
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://domain-kamu
+RUN_DB_SEED=true
+```
+
+2. Setelah data awal masuk dengan benar, ubah:
+
+```text
+RUN_DB_SEED=false
+```
+
+3. Restart / redeploy biasa cukup memakai:
+
+```text
+RUN_DB_SEED=false
+```
+
+Dengan pola ini, data awal tetap ada setelah hosting, tetapi container restart tidak akan menyuntik ulang seed terus-menerus.
+
 Contoh test API:
 
 ```bash
