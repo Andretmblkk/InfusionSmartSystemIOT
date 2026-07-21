@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Controllers\Api\InfusionReadingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterDataController;
@@ -11,8 +14,12 @@ use App\Http\Controllers\MonitoringHistoryController;
 use App\Http\Controllers\OperatorPanelController;
 use App\Http\Controllers\PatientController;
 
-Route::post('/api.php', [InfusionReadingController::class, 'store'])->name('legacy.infusion-readings.api-php');
-Route::post('/update_data.php', [InfusionReadingController::class, 'store'])->name('legacy.infusion-readings.update-data');
+Route::post('/api.php', [InfusionReadingController::class, 'store'])
+    ->withoutMiddleware([StartSession::class, ShareErrorsFromSession::class, ValidateCsrfToken::class])
+    ->name('legacy.infusion-readings.api-php');
+Route::post('/update_data.php', [InfusionReadingController::class, 'store'])
+    ->withoutMiddleware([StartSession::class, ShareErrorsFromSession::class, ValidateCsrfToken::class])
+    ->name('legacy.infusion-readings.update-data');
 
 Route::get('/', function () {
     return view('pages.login');

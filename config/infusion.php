@@ -22,6 +22,7 @@ return [
     'estimation_min_drop_ml' => (float) env('INFUSION_ESTIMATION_MIN_DROP_ML', 2),
     'estimation_min_rate_ml_per_minute' => (float) env('INFUSION_ESTIMATION_MIN_RATE_ML_PER_MINUTE', 0.2),
     'estimation_max_minutes' => (int) env('INFUSION_ESTIMATION_MAX_MINUTES', 24 * 60),
+    'page_refresh_seconds' => (int) env('INFUSION_PAGE_REFRESH_SECONDS', 15),
 
     'beds' => [
         1 => ['label' => 'Bed 1', 'node_id' => 2],

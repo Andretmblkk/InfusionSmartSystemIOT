@@ -3,7 +3,7 @@
 @section('title', 'Panel Operator - VitalFlow')
 
 @push('head')
-    <meta http-equiv="refresh" content="5">
+    <meta http-equiv="refresh" content="{{ config('infusion.page_refresh_seconds', 15) }}">
 @endpush
 
 @php
