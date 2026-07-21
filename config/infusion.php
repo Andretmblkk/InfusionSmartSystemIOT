@@ -40,9 +40,9 @@ return [
 
     'operator_profiles' => [
         'pending' => ['label' => 'Belum Mengalir', 'rate_ml_per_hour' => 0],
-        'slow' => ['label' => 'Lambat', 'rate_ml_per_hour' => 40],
-        'medium' => ['label' => 'Sedang', 'rate_ml_per_hour' => 100],
-        'fast' => ['label' => 'Cepat', 'rate_ml_per_hour' => 160],
+        'slow' => ['label' => 'Lambat', 'rate_ml_per_hour' => 80],
+        'medium' => ['label' => 'Sedang', 'rate_ml_per_hour' => 180],
+        'fast' => ['label' => 'Cepat', 'rate_ml_per_hour' => 300],
         'stopped' => ['label' => 'Berhenti', 'rate_ml_per_hour' => 0],
     ],
 ];
