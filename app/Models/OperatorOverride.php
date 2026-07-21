@@ -13,6 +13,7 @@ class OperatorOverride extends Model
     protected $fillable = [
         'node_id',
         'bed_number',
+        'infusion_monitoring_id',
         'operator_user_id',
         'active',
         'condition',
@@ -29,6 +30,7 @@ class OperatorOverride extends Model
         return [
             'node_id' => 'integer',
             'bed_number' => 'integer',
+            'infusion_monitoring_id' => 'integer',
             'operator_user_id' => 'integer',
             'active' => 'boolean',
             'has_flow_started' => 'boolean',

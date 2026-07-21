@@ -12,10 +12,11 @@ use Illuminate\Support\Collection;
 
 class OperatorOverrideService
 {
-    public function activeForNode(int $nodeId): ?OperatorOverride
+    public function activeForMonitoring(InfusionMonitoring $monitoring): ?OperatorOverride
     {
         return OperatorOverride::query()
-            ->where('node_id', $nodeId)
+            ->where('node_id', (int) $monitoring->node_id)
+            ->where('infusion_monitoring_id', $monitoring->id)
             ->where('active', true)
             ->first();
     }
@@ -47,6 +48,7 @@ class OperatorOverrideService
             ['node_id' => $nodeId],
             [
                 'bed_number' => $bedNumber,
+                'infusion_monitoring_id' => $monitoring?->id,
                 'operator_user_id' => $user->id,
                 'active' => true,
                 'condition' => $condition,
@@ -89,6 +91,7 @@ class OperatorOverrideService
             ['node_id' => $nodeId],
             [
                 'bed_number' => $bedNumber,
+                'infusion_monitoring_id' => $monitoring?->id,
                 'operator_user_id' => $user->id,
                 'active' => true,
                 'condition' => 'normal',
@@ -115,7 +118,7 @@ class OperatorOverrideService
 
     public function snapshotForMonitoring(InfusionMonitoring $monitoring, Patient $patient): ?array
     {
-        $override = $this->activeForNode((int) $monitoring->node_id);
+        $override = $this->activeForMonitoring($monitoring);
 
         if (! $override) {
             return null;
@@ -218,7 +221,14 @@ class OperatorOverrideService
         foreach ($beds as $bedNumber => $bed) {
             $nodeId = (int) $bed['node_id'];
             $monitoring = $monitorings->firstWhere('node_id', $nodeId);
-            $override = $overrides->firstWhere('node_id', $nodeId);
+            $override = $overrides->first(function (OperatorOverride $override) use ($nodeId, $monitoring): bool {
+                if ((int) $override->node_id !== $nodeId) {
+                    return false;
+                }
+
+                return $monitoring
+                    && (int) $override->infusion_monitoring_id === (int) $monitoring->id;
+            });
             $patient = $monitoring?->patient;
             $reading = $monitoring?->latestReading;
             $hardwareOnline = $reading && $reading->logged_at->gte(now()->subSeconds(max(5, (int) config('infusion.offline_seconds', 30))));
