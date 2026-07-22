@@ -9,11 +9,16 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class OperatorOverrideService
 {
     public function activeForMonitoring(InfusionMonitoring $monitoring): ?OperatorOverride
     {
+        if (! $this->hasMonitoringScopeColumn()) {
+            return null;
+        }
+
         return OperatorOverride::query()
             ->where('node_id', (int) $monitoring->node_id)
             ->where('infusion_monitoring_id', $monitoring->id)
@@ -44,22 +49,24 @@ class OperatorOverrideService
             $hasFlowStarted = true;
         }
 
-        return OperatorOverride::query()->updateOrCreate(
-            ['node_id' => $nodeId],
-            [
-                'bed_number' => $bedNumber,
-                'infusion_monitoring_id' => $monitoring?->id,
-                'operator_user_id' => $user->id,
-                'active' => true,
-                'condition' => $condition,
-                'flow_profile' => $flowProfile,
-                'has_flow_started' => $hasFlowStarted,
-                'baseline_weight' => $baselineWeight,
-                'baseline_percentage' => $baselinePercentage,
-                'baseline_recorded_at' => $now,
-                'released_at' => null,
-            ],
-        );
+        $values = [
+            'bed_number' => $bedNumber,
+            'operator_user_id' => $user->id,
+            'active' => true,
+            'condition' => $condition,
+            'flow_profile' => $flowProfile,
+            'has_flow_started' => $hasFlowStarted,
+            'baseline_weight' => $baselineWeight,
+            'baseline_percentage' => $baselinePercentage,
+            'baseline_recorded_at' => $now,
+            'released_at' => null,
+        ];
+
+        if ($this->hasMonitoringScopeColumn()) {
+            $values['infusion_monitoring_id'] = $monitoring?->id;
+        }
+
+        return OperatorOverride::query()->updateOrCreate(['node_id' => $nodeId], $values);
     }
 
     public function applyFlowProfile(
@@ -87,22 +94,24 @@ class OperatorOverrideService
             $hasFlowStarted = true;
         }
 
-        return OperatorOverride::query()->updateOrCreate(
-            ['node_id' => $nodeId],
-            [
-                'bed_number' => $bedNumber,
-                'infusion_monitoring_id' => $monitoring?->id,
-                'operator_user_id' => $user->id,
-                'active' => true,
-                'condition' => 'normal',
-                'flow_profile' => $flowProfile,
-                'has_flow_started' => $hasFlowStarted,
-                'baseline_weight' => $baseline['weight'],
-                'baseline_percentage' => $baseline['percentage'],
-                'baseline_recorded_at' => $now,
-                'released_at' => null,
-            ],
-        );
+        $values = [
+            'bed_number' => $bedNumber,
+            'operator_user_id' => $user->id,
+            'active' => true,
+            'condition' => 'normal',
+            'flow_profile' => $flowProfile,
+            'has_flow_started' => $hasFlowStarted,
+            'baseline_weight' => $baseline['weight'],
+            'baseline_percentage' => $baseline['percentage'],
+            'baseline_recorded_at' => $now,
+            'released_at' => null,
+        ];
+
+        if ($this->hasMonitoringScopeColumn()) {
+            $values['infusion_monitoring_id'] = $monitoring?->id;
+        }
+
+        return OperatorOverride::query()->updateOrCreate(['node_id' => $nodeId], $values);
     }
 
     public function release(User $user, int $nodeId): void
@@ -221,8 +230,13 @@ class OperatorOverrideService
         foreach ($beds as $bedNumber => $bed) {
             $nodeId = (int) $bed['node_id'];
             $monitoring = $monitorings->firstWhere('node_id', $nodeId);
-            $override = $overrides->first(function (OperatorOverride $override) use ($nodeId, $monitoring): bool {
+            $hasMonitoringScopeColumn = $this->hasMonitoringScopeColumn();
+            $override = $overrides->first(function (OperatorOverride $override) use ($nodeId, $monitoring, $hasMonitoringScopeColumn): bool {
                 if ((int) $override->node_id !== $nodeId) {
+                    return false;
+                }
+
+                if (! $hasMonitoringScopeColumn) {
                     return false;
                 }
 
@@ -350,5 +364,16 @@ class OperatorOverrideService
             'empty' => 'Habis',
             default => 'Normal',
         };
+    }
+
+    private function hasMonitoringScopeColumn(): bool
+    {
+        static $exists = null;
+
+        if ($exists === null) {
+            $exists = Schema::hasColumn('operator_overrides', 'infusion_monitoring_id');
+        }
+
+        return $exists;
     }
 }
