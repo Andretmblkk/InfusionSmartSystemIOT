@@ -198,7 +198,7 @@ class InfusionDisplayService
                     'nurse' => $monitoring->responsible_nurse ?: '-',
                     'startedAt' => optional($monitoring->started_at)->format('d M Y, H:i') ?? '-',
                     'endedAt' => optional($monitoring->ended_at)->format('d M Y, H:i') ?? '-',
-                    'status' => ucfirst($monitoring->status),
+                    'status' => $this->monitoringStatusLabel($monitoring->status),
                     'latestPercentage' => $reading ? $this->formatNumber($reading->remaining_percentage) . '%' : '-',
                 ];
             })
@@ -224,7 +224,6 @@ class InfusionDisplayService
 
     private function buildReportRow(Patient $patient, int $index): array
     {
-        $snapshot = $this->snapshot($patient, $index);
         $sessions = $patient->infusionMonitorings->sortBy('started_at')->values();
         $latestSession = $sessions->last();
         $replacementCount = max(0, $sessions->count() - 1);
@@ -252,8 +251,8 @@ class InfusionDisplayService
             'nurses' => $nurses->isNotEmpty() ? $nurses->implode(', ') : $patient->nurse_name,
             'firstDate' => optional($sessions->first()?->started_at)->format('d M Y, H:i') ?? '-',
             'latestDate' => optional($latestSession?->started_at)->format('d M Y, H:i') ?? '-',
-            'status' => $snapshot['statusLabel'],
-            'tone' => $snapshot['statusTone'],
+            'status' => $this->monitoringStatusLabel($latestSession?->status),
+            'tone' => $this->monitoringStatusTone($latestSession?->status),
             'href' => route('monitoring.history.show', $patient),
         ];
     }
@@ -446,6 +445,27 @@ class InfusionDisplayService
         }
 
         return 'green';
+    }
+
+    private function monitoringStatusLabel(?string $status): string
+    {
+        return match ($status) {
+            'aktif' => 'Aktif',
+            'bermasalah' => 'Bermasalah',
+            'diganti' => 'Infus Diganti',
+            'selesai' => 'Selesai Monitoring',
+            default => 'Belum Ada Monitoring',
+        };
+    }
+
+    private function monitoringStatusTone(?string $status): string
+    {
+        return match ($status) {
+            'aktif' => 'green',
+            'bermasalah' => 'red',
+            'diganti', 'selesai' => 'cyan',
+            default => 'cyan',
+        };
     }
 
     private function formatNumber(float $value): string

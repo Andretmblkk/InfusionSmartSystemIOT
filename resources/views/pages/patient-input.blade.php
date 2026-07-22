@@ -64,7 +64,7 @@
                                     data-alergi="{{ $registeredPatient->alergi ?: '-' }}"
                                     @selected((int) old('data_pasien_id') === $registeredPatient->id)
                                 >
-                                    {{ $registeredPatient->nomor_rekam_medis }} | {{ $registeredPatient->nama_lengkap }} | {{ $registeredPatient->tanggal_lahir?->format('d-m-Y') ?: '-' }} | {{ $registeredPatient->jenis_jaminan ?: 'Tanpa jaminan' }}
+                                    {{ $registeredPatient->nomor_rekam_medis }} | {{ $registeredPatient->nama_lengkap }} | {{ $registeredPatient->tanggal_lahir?->format('d-m-Y') ?: '-' }} | {{ $registeredPatient->jenis_jaminan ?: 'Tanpa jaminan' }} | {{ $registeredPatient->monitoring_status_label }}
                                 </option>
                             @endforeach
                         </select>

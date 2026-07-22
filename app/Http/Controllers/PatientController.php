@@ -251,8 +251,29 @@ class PatientController extends Controller
     private function registeredPatients()
     {
         return RegisteredPatient::where('aktif', true)
+            ->with(['monitoringPatients.infusionMonitorings' => fn ($query) => $query->latest('id')])
             ->orderBy('nama_lengkap')
-            ->get();
+            ->get()
+            ->map(function (RegisteredPatient $patient): RegisteredPatient {
+                $latestMonitoring = $patient->monitoringPatients
+                    ->flatMap(fn (Patient $monitoringPatient) => $monitoringPatient->infusionMonitorings)
+                    ->sortByDesc('id')
+                    ->first();
+
+                $patient->monitoring_status_label = $this->registeredPatientMonitoringLabel($latestMonitoring?->status);
+
+                return $patient;
+            });
+    }
+
+    private function registeredPatientMonitoringLabel(?string $status): string
+    {
+        return match ($status) {
+            'aktif', 'bermasalah' => 'Sedang monitoring',
+            'selesai' => 'Selesai monitoring',
+            'diganti' => 'Infus pernah diganti',
+            default => 'Belum pernah monitoring',
+        };
     }
 
     private function doctors()
