@@ -313,6 +313,13 @@ class OperatorOverrideService
         $capacity = max(1, (int) ($monitoring?->capacity_ml ?: $monitoring?->patient?->initial_volume ?: 500));
 
         if ($reading) {
+            if ($preferRealBaseline && ((float) $reading->weight <= 0 || (float) $reading->remaining_percentage <= app(InfusionCalculator::class)->emptyPercentage())) {
+                return [
+                    'weight' => (float) $capacity,
+                    'percentage' => 100.0,
+                ];
+            }
+
             return [
                 'weight' => (float) $reading->weight,
                 'percentage' => (float) $reading->remaining_percentage,
