@@ -34,7 +34,7 @@ class OperatorOverrideService
         ?InfusionMonitoring $monitoring = null,
     ): OperatorOverride {
         $override = $this->existingOverride($nodeId);
-        $baseline = $this->currentBaseline($override, $monitoring, $condition === 'normal');
+        $baseline = $this->currentOverrideBaseline($override, $monitoring);
         $now = now();
 
         $baselinePercentage = $baseline['percentage'];
@@ -42,7 +42,12 @@ class OperatorOverrideService
         $flowProfile = $override?->flow_profile ?: 'pending';
         $hasFlowStarted = (bool) ($override?->has_flow_started ?? false);
 
-        if ($condition === 'empty') {
+        if ($condition === 'normal' && ! ($override?->active ?? false)) {
+            $baselinePercentage = 100.0;
+            $baselineWeight = $this->monitoringCapacity($monitoring);
+            $flowProfile = 'pending';
+            $hasFlowStarted = false;
+        } elseif ($condition === 'empty') {
             $baselinePercentage = 0;
             $baselineWeight = 0;
             $flowProfile = 'stopped';
@@ -77,7 +82,7 @@ class OperatorOverrideService
         ?InfusionMonitoring $monitoring = null,
     ): OperatorOverride {
         $override = $this->existingOverride($nodeId);
-        $baseline = $this->currentBaseline($override, $monitoring, true);
+        $baseline = $this->currentOverrideBaseline($override, $monitoring);
         $now = now();
 
         $hasFlowStarted = $override?->has_flow_started ?? false;
@@ -288,9 +293,9 @@ class OperatorOverrideService
         return OperatorOverride::query()->where('node_id', $nodeId)->first();
     }
 
-    private function currentBaseline(?OperatorOverride $override, ?InfusionMonitoring $monitoring, bool $preferRealBaseline = false): array
+    private function currentOverrideBaseline(?OperatorOverride $override, ?InfusionMonitoring $monitoring): array
     {
-        if ($override && $override->active && ! $preferRealBaseline && ! in_array($override->condition, ['offline', 'empty'], true)) {
+        if ($override && $override->active) {
             $snapshot = $this->snapshotForMonitoring(
                 $monitoring ?? new InfusionMonitoring([
                     'node_id' => $override->node_id,
@@ -309,27 +314,15 @@ class OperatorOverrideService
             }
         }
 
-        $reading = $monitoring?->latestReading;
-        $capacity = max(1, (int) ($monitoring?->capacity_ml ?: $monitoring?->patient?->initial_volume ?: 500));
-
-        if ($reading) {
-            if ($preferRealBaseline && ((float) $reading->weight <= 0 || (float) $reading->remaining_percentage <= app(InfusionCalculator::class)->emptyPercentage())) {
-                return [
-                    'weight' => (float) $capacity,
-                    'percentage' => 100.0,
-                ];
-            }
-
-            return [
-                'weight' => (float) $reading->weight,
-                'percentage' => (float) $reading->remaining_percentage,
-            ];
-        }
-
         return [
-            'weight' => (float) $capacity,
+            'weight' => (float) $this->monitoringCapacity($monitoring),
             'percentage' => 100.0,
         ];
+    }
+
+    private function monitoringCapacity(?InfusionMonitoring $monitoring): int
+    {
+        return max(1, (int) ($monitoring?->capacity_ml ?: $monitoring?->patient?->initial_volume ?: 500));
     }
 
     private function profile(string $flowProfile): array
